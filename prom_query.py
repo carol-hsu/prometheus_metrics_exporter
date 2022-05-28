@@ -1,11 +1,22 @@
+#   Copyright 2022 Carol Hsu
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+
 import csv
 import requests
 import sys
 from grabber import PromDataGrabber
-
-"""
-A simple program to print the result of a Prometheus query as CSV.
-"""
 
 
 """
@@ -30,10 +41,11 @@ if len(sys.argv) < 7:
     sys.exit(1)
 
 ## check parameters and replace default values
-g = PromDataGrabber(sys.argv[1], sys.argv[2], None, None, sys.argv[5], sys.argv[6], sys.argv[7]) \
+g = PromDataGrabber(sys.argv[1], sys.argv[2], None, None, sys.argv[5], int(sys.argv[6]), int(sys.argv[7])) \
     if sys.argv[3] == "none" else\
-    PromDataGrabber(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7])
+    PromDataGrabber(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], int(sys.argv[6]), int(sys.argv[7]))
 print(g.getPromSql())
+
     
 ### getting metrics by query frequency
 response = requests.get('{0}/api/v1/query'.format(g.getServerUrl()), params={'query': g.getPromSql()})
@@ -46,22 +58,3 @@ if len(results) != 1:
 writer = csv.writer(sys.stdout)
 writer.writerow(results[0]['value'])
 
-## Build a list of all labelnames used.
-#labelnames = set()
-#for result in results:
-#      labelnames.update(result['metric'].keys())
-#
-## Canonicalize
-#labelnames.discard('__name__')
-#labelnames = sorted(labelnames)
-#
-#writer = csv.writer(sys.stdout)
-## Write the header,
-#writer.writerow(['name', 'timestamp', 'value'] + labelnames)
-#
-## Write the samples.
-#for result in results:
-#    l = [result['metric'].get('__name__', '')] + result['value']
-#    for label in labelnames:
-#        l.append(result['metric'].get(label, ''))
-#    writer.writerow(l)

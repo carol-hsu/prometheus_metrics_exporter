@@ -43,7 +43,7 @@ if len(sys.argv) < 7:
 g = PromDataGrabber(sys.argv[1], sys.argv[2], None, None, int(sys.argv[5]), int(sys.argv[6]), int(sys.argv[7])) \
     if sys.argv[3] == "none" else\
     PromDataGrabber(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]), int(sys.argv[6]), int(sys.argv[7]))
-print(g.get_prom_sql())
+#print(g.get_prom_sql())
 
 if g.is_period_valid():
     # list of strings
@@ -56,9 +56,12 @@ if g.is_period_valid():
         response = requests.get(url, params={'query': g.get_prom_sql().replace('{0}', str(ts))})
         results = response.json()['data']['result']
         ### based on the PromSQL we sent, should only get one result
-        if len(results) != 1:
+        if len(results) > 1:
             print('Get more than one value, or more values... please update your PromSQL.')
             sys.exit(1)
+        elif len(results) < 1:
+            print(str(ts)+",0")
+            continue
  
         print(str(ts)+","+results[0]['value'][1])
 

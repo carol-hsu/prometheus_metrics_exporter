@@ -46,3 +46,5 @@ $ python3 query_csv.py http://10.102.36.94:9090 'container_cpu_usage_seconds_tot
 
 This command will get values of CPU usage rate by "irate" in range of 1 minute, starting from 30 minutes ago to 20 minutes ago, and with 15-second interval.
 We can add query details in `{}` of `$QUERY_LANG` to get specific data.
+
+You can also check the script `collect_metrics.sh` for our usage example.

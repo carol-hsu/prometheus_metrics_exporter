@@ -15,7 +15,7 @@
 
 
 class PromDataGrabber():
-    def __init__(self, server_url, query_lang, func="rate", func_range="1m", offset=20, freq_sec=15, leng_min=10):
+    def __init__(self, server_url, query_lang, func="rate", func_range="1m", freq_sec=15, offset=20, leng_min=10):
         self.server_url = server_url
 
         ## offset would keep changing while querying

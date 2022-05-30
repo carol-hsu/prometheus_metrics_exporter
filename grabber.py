@@ -15,22 +15,39 @@
 
 
 class PromDataGrabber():
-    def __init__(self, server_url, query_lang, func="rate", func_range="1m", offset="20m", freq_sec=15, leng_min=10):
+    def __init__(self, server_url, query_lang, func="rate", func_range="1m", offset=20, freq_sec=15, leng_min=10):
         self.server_url = server_url
+
         ## offset would keep changing while querying
-        self.sql = func+"("+query_lang+"["+func_range+"] offset "+offset+")" if func else \
-                   query_lang+" offset " +offset
+        self.sql = func+"("+query_lang+"["+func_range+"] offset {0}s )" if func else \
+                   query_lang+" offset {0}s"
+        self.offset_min = offset
         self.freq_sec = freq_sec
         self.leng_min = leng_min
 
-    def getServerUrl(self):
+    def get_server_url(self):
         return self.server_url
     
-    def getPromSql(self):
+    def get_prom_sql(self):
         return self.sql
 
-    def getFreq(self):
+    def get_offset(self):
+        return self.offset_min*60
+
+    def get_freq(self):
         return self.freq_sec
 
-    def getLength(self):
-        return self.leng_min
+    def get_length(self):
+        return self.leng_min*60
+
+    def is_period_valid(self):
+        # query would be invalid because
+        # 1. offset or leng_min <= 0
+        # 2. leng_min > offset
+        if self.offset_min <= 0 or self.leng_min <= 0:
+            return False
+        elif self.leng_min > self.offset_min:
+            return False
+
+        return True
+        

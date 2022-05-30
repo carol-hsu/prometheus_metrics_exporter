@@ -13,7 +13,6 @@
 #   limitations under the License.
 
 
-import csv
 import requests
 import sys
 from grabber import PromDataGrabber
@@ -26,12 +25,12 @@ Input paramters
 2. query language
 3. rate or irate or none. If none, just get raw data
 4. range of data points for number calculation (e.g. rate, average..)
-5. querying frequency
-6. the starting point of getting data, how many minutes ago from now on.
-7. the length of querying time
+5. querying frequency (sec)
+6. the starting point of getting data, how many minutes ago from now on (min).
+7. the length of querying time (min).
 
-Execution example: python3 ./query_csv.py $PROM_SERVER_URL '$QUERY_LANG' rate/irate/none $RANGE $START_OFFSET $FREQ $LENGTH
-$ python3 query_csv.py http://10.102.36.94:9090 'container_cpu_usage_seconds_total{namespace="default"}' irate 1m 30m 15 10
+Execution example: python3 prom_query.py $PROM_SERVER_URL '$QUERY_LANG' rate/irate/none $RANGE $START_OFFSET $FREQ $LENGTH
+$ python3 prom_query.py http://10.102.36.94:9090 'container_cpu_usage_seconds_total{namespace="default"}' irate 1m 30m 15 10
 """
 
 
@@ -41,20 +40,29 @@ if len(sys.argv) < 7:
     sys.exit(1)
 
 ## check parameters and replace default values
-g = PromDataGrabber(sys.argv[1], sys.argv[2], None, None, sys.argv[5], int(sys.argv[6]), int(sys.argv[7])) \
+g = PromDataGrabber(sys.argv[1], sys.argv[2], None, None, int(sys.argv[5]), int(sys.argv[6]), int(sys.argv[7])) \
     if sys.argv[3] == "none" else\
-    PromDataGrabber(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], int(sys.argv[6]), int(sys.argv[7]))
-print(g.getPromSql())
+    PromDataGrabber(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]), int(sys.argv[6]), int(sys.argv[7]))
+print(g.get_prom_sql())
 
-    
-### getting metrics by query frequency
-response = requests.get('{0}/api/v1/query'.format(g.getServerUrl()), params={'query': g.getPromSql()})
-results = response.json()['data']['result']
-### based on the PromSQL we sent, should only get one result
-if len(results) != 1:
-    print('Get more than one value, or more values... please update your PromSQL.')
-    sys.exit(1)
+if g.is_period_valid():
+    # list of strings
+    offset = g.get_offset()
+    url =  g.get_server_url() + '/api/v1/query'
 
-writer = csv.writer(sys.stdout)
-writer.writerow(results[0]['value'])
+    # the offset of quering string will keep less and less = from the earliest data to the latest one
+    for ts in range(offset, offset - g.get_length(), -g.get_freq()):
+        ### getting metrics by query frequency
+        response = requests.get(url, params={'query': g.get_prom_sql().replace('{0}', str(ts))})
+        results = response.json()['data']['result']
+        ### based on the PromSQL we sent, should only get one result
+        if len(results) != 1:
+            print('Get more than one value, or more values... please update your PromSQL.')
+            sys.exit(1)
+ 
+        print(str(ts)+","+results[0]['value'][1])
 
+    print(str(offset)+"  "+str(offset-g.get_length()))
+else:
+    print('Invaild query period from {0} seconds ago until {1} seconds ago'.format(str(g.get_offset()),\
+                                                                                   str(g.get_offset() - g.get_length())))
